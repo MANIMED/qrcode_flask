@@ -13,13 +13,11 @@
 </head>
 <body>
     <h2>Vérifier un document PDF signé</h2>
-    <form action="/verify" method="post" enctype="multipart/form-data">
-        <label>Fichier PDF original :</label><br>
-        <input type="file" name="file" accept="application/pdf" required>
-        <br><br>
-        <label>Fichier signature (.sig) :</label><br>
-        <input type="file" name="signature" required>
-        <br><br>
+
+    <p>Pour tester, scannez le QR Code du PDF signé, ou entrez l’ID du document :</p>
+
+    <form action="/verify_mobile" method="get">
+        <input type="text" name="id" placeholder="ID du document" required>
         <button type="submit">Vérifier</button>
     </form>
 
