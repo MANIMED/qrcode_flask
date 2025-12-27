@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Vérification complète du document</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, button { padding: 10px; font-size: 16px; }
+        .ok { color: green; font-weight: bold; }
+        .bad { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h2>Vérifier l’authenticité du document</h2>
+
+<form method="post" enctype="multipart/form-data">
+    <p>
+        <strong>ID du document :</strong> {{ doc_id }}
+    </p>
+
+    <input type="file" name="file" accept="application/pdf" required>
+    <br><br>
+    <button type="submit">Vérifier le document</button>
+</form>
+
+{% if result %}
+    {% if result == "valid" %}
+        <p class="ok">✅ Document AUTHENTIQUE</p>
+    {% else %}
+        <p class="bad">❌ Document MODIFIÉ</p>
+    {% endif %}
+{% endif %}
+
+</body>
+</html>
