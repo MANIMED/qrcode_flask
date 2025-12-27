@@ -2,3 +2,4 @@ Flask==2.3.2
 cryptography==41.0.3
 qrcode==7.4.2
 PyMuPDF==1.23.6
+Pillow==10.0.0
