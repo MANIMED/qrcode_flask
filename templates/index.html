@@ -11,6 +11,14 @@
     </style>
 </head>
 <body>
+    <nav>
+    <ul>
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/sign">Signer un PDF</a></li>
+        <li><a href="/verify">Vérifier une signature</a></li>
+        <li><a href="/verify_full">Vérification complète</a></li>
+    </ul>
+</nav>
     <h2>Signer un document PDF</h2>
 
     <form action="/sign" method="post" enctype="multipart/form-data">
@@ -19,7 +27,7 @@
         <button type="submit">Signer le PDF</button>
     </form>
 
-    <hr>
-    <a href="/verify_mobile">Vérifier un document</a>
+
 </body>
 </html>
+
