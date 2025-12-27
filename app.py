@@ -140,6 +140,41 @@ def verify_mobile():
     except:
         return "<h2>Document NON VALIDE </h2>"
 
+@app.route("/verify_full", methods=["GET", "POST"])
+def verify_full():
+    doc_id = request.args.get("id")
+    if not doc_id:
+        return "QR Code invalide", 400
+
+    if request.method == "POST":
+        uploaded_pdf = request.files["file"]
+        pdf_data = uploaded_pdf.read()
+
+        # Hash du PDF uploadé
+        uploaded_hash = hashlib.sha256(pdf_data).hexdigest()
+
+        try:
+            # Hash original signé
+            with open(f"signed/{doc_id}/hash.txt", "r") as f:
+                original_hash = f.read()
+
+            if uploaded_hash == original_hash:
+                return render_template(
+                    "verify_full.html",
+                    doc_id=doc_id,
+                    result="valid"
+                )
+            else:
+                return render_template(
+                    "verify_full.html",
+                    doc_id=doc_id,
+                    result="invalid"
+                )
+
+        except Exception as e:
+            return f"Erreur de vérification : {e}", 500
+
+    return render_template("verify_full.html", doc_id=doc_id)
 
 # ---------------------- Lancement ----------------------
 if __name__ == "__main__":
