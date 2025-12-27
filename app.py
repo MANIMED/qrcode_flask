@@ -5,6 +5,8 @@ import qrcode
 import fitz  # PyMuPDF
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from pyzbar.pyzbar import decode
+from PIL import Image
 
 # ---------------------- Initialisation ----------------------
 app = Flask(__name__)
@@ -142,39 +144,61 @@ def verify_mobile():
 
 @app.route("/verify_full", methods=["GET", "POST"])
 def verify_full():
-    doc_id = request.args.get("id")
-    if not doc_id:
-        return "QR Code invalide", 400
-
     if request.method == "POST":
         uploaded_pdf = request.files["file"]
         pdf_data = uploaded_pdf.read()
 
-        # Hash du PDF uploadé
-        uploaded_hash = hashlib.sha256(pdf_data).hexdigest()
+        # Ouvrir le PDF avec PyMuPDF
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+        qr_id = None
 
+        # Parcourir les pages pour extraire images et lire QR
+        for page in doc:
+            for img_index, img in enumerate(page.get_images(full=True)):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                image = Image.open(io.BytesIO(image_bytes))
+                decoded = decode(image)
+                if decoded:
+                    qr_id = decoded[0].data.decode("utf-8").split("id=")[-1]
+                    break
+            if qr_id:
+                break
+
+        if not qr_id:
+            return "QR Code non trouvé dans le PDF", 400
+
+        # Vérification du hash avec signature
+        uploaded_hash = hashlib.sha256(pdf_data).hexdigest()
         try:
-            # Hash original signé
-            with open(f"signed/{doc_id}/hash.txt", "r") as f:
+            with open(f"signed/{qr_id}/hash.txt", "r") as f:
                 original_hash = f.read()
+            with open(f"signed/{qr_id}/signature.sig", "rb") as f:
+                signature = f.read()
+
+            # Vérification RSA
+            public_key.verify(
+                signature,
+                original_hash.encode(),
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
 
             if uploaded_hash == original_hash:
-                return render_template(
-                    "verify_full.html",
-                    doc_id=doc_id,
-                    result="valid"
-                )
+                result = "valid"
             else:
-                return render_template(
-                    "verify_full.html",
-                    doc_id=doc_id,
-                    result="invalid"
-                )
+                result = "invalid"
 
         except Exception as e:
             return f"Erreur de vérification : {e}", 500
 
-    return render_template("verify_full.html", doc_id=doc_id)
+        return render_template("verify_full.html", doc_id=qr_id, result=result)
+
+    return render_template("verify_full.html", doc_id=None)
 
 # ---------------------- Lancement ----------------------
 if __name__ == "__main__":
