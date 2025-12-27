@@ -4,6 +4,8 @@ import qrcode
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from flask import send_file
+import fitz  # PyMuPDF
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -58,13 +60,11 @@ def sign_pdf():
     pdf = request.files["pdf"]
     pdf_bytes = pdf.read()
 
-    # --- Calcul du hash ---
+    # --- Calcul du hash et signature ---
     pdf_hash = sha256_file(pdf_bytes)
-
-    # --- Signature ---
     signature = sign_hash(pdf_hash)
 
-    # --- Génération QR ---
+    # --- QR code JSON ---
     qr_payload = {
         "hash": pdf_hash,
         "signature": base64.b64encode(signature).decode(),
@@ -73,23 +73,34 @@ def sign_pdf():
     qr_data = json.dumps(qr_payload)
     qr_img = qrcode.make(qr_data)
 
-    # --- Sauvegarde PDF et QR ---
-    pdf_filename = pdf.filename
-    signed_pdf_path = os.path.join("signed", pdf_filename)
-    with open(signed_pdf_path, "wb") as f:
-        f.write(pdf_bytes)
-
-    qr_name = f"qr_{os.path.splitext(pdf_filename)[0]}.png"
-    qr_path = os.path.join("signed", qr_name)
+    # --- Sauvegarde temporaire QR code ---
+    qr_path = os.path.join("signed", "temp_qr.png")
     qr_img.save(qr_path)
 
-    # --- Retourner le PDF signé automatiquement ---
+    # --- Sauvegarde PDF original temporaire ---
+    pdf_path = os.path.join("signed", "temp.pdf")
+    with open(pdf_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    # --- Ouvrir PDF et insérer QR code sur la première page ---
+    doc = fitz.open(pdf_path)
+    page = doc[0]
+
+    # Taille et position du QR code
+    rect = fitz.Rect(50, 50, 200, 200)  # X0,Y0,X1,Y1
+    page.insert_image(rect, filename=qr_path)
+    
+    signed_pdf_path = os.path.join("signed", f"signed_{pdf.filename}")
+    doc.save(signed_pdf_path)
+    doc.close()
+
+    # --- Retour automatique PDF avec QR code ---
     return send_file(
         signed_pdf_path,
         as_attachment=True,
-        download_name=f"signed_{pdf_filename}"
+        download_name=f"signed_{pdf.filename}"
     )
-
+    
 @app.route("/verify_pdf", methods=["POST"])
 def verify_pdf():
     pdf = request.files["pdf"]
