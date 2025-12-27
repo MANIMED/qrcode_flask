@@ -133,9 +133,9 @@ def verify_pdf():
 
 @app.route("/verify_qr", methods=["POST"])
 def verify_qr():
-    qr_json = request.form.get("qr_data")
-    if not qr_json:
+    if not data or "qrData" not in data:
         return jsonify({"error": "QR missing"}), 400
+    qr_json = data["qrData"]
     try:
         qr = json.loads(qr_json)
         public_key.verify(
