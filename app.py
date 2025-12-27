@@ -6,8 +6,11 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from flask import send_file
 import fitz  # PyMuPDF
 from PIL import Image
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Autorise toutes les origines
+
 
 # --- Folders ---
 for folder in ["uploads", "signed", "keys"]:
@@ -100,7 +103,7 @@ def sign_pdf():
         as_attachment=True,
         download_name=f"signed_{pdf.filename}"
     )
-    
+
 @app.route("/verify_pdf", methods=["POST"])
 def verify_pdf():
     pdf = request.files["pdf"]

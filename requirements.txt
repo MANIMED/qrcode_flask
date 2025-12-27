@@ -4,3 +4,4 @@ qrcode
 PyMuPDF
 Pillow
 gunicorn
+Flask-Cors
