@@ -3,6 +3,7 @@ from flask import Flask, request, send_file, render_template, jsonify
 import qrcode
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from flask import send_file
 
 app = Flask(__name__)
 
@@ -56,34 +57,38 @@ def index():
 def sign_pdf():
     pdf = request.files["pdf"]
     pdf_bytes = pdf.read()
+
+    # --- Calcul du hash ---
     pdf_hash = sha256_file(pdf_bytes)
+
+    # --- Signature ---
     signature = sign_hash(pdf_hash)
-    
-    # QR payload
+
+    # --- Génération QR ---
     qr_payload = {
         "hash": pdf_hash,
         "signature": base64.b64encode(signature).decode(),
         "issuer": "MyFlaskServer"
     }
     qr_data = json.dumps(qr_payload)
-    
-    # Save QR image
     qr_img = qrcode.make(qr_data)
-    qr_name = f"{os.path.splitext(pdf.filename)[0]}_qr.png"
+
+    # --- Sauvegarde PDF et QR ---
+    pdf_filename = pdf.filename
+    signed_pdf_path = os.path.join("signed", pdf_filename)
+    with open(signed_pdf_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    qr_name = f"qr_{os.path.splitext(pdf_filename)[0]}.png"
     qr_path = os.path.join("signed", qr_name)
     qr_img.save(qr_path)
 
-    # Save PDF signed (for simplicity we return original PDF)
-    pdf_path = os.path.join("signed", pdf.filename)
-    with open(pdf_path, "wb") as f:
-        f.write(pdf_bytes)
-
-    return jsonify({
-        "message": "PDF signé et QR généré",
-        "pdf_file": f"/download/{pdf.filename}",
-        "qr_file": f"/download/{qr_name}",
-        "qr_json": qr_payload
-    })
+    # --- Retourner le PDF signé automatiquement ---
+    return send_file(
+        signed_pdf_path,
+        as_attachment=True,
+        download_name=f"signed_{pdf_filename}"
+    )
 
 @app.route("/verify_pdf", methods=["POST"])
 def verify_pdf():
