@@ -1,6 +1,6 @@
 import os
 import hashlib
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, jsonify
 import qrcode
 import fitz  # PyMuPDF
 from cryptography.hazmat.primitives import hashes, serialization
@@ -47,6 +47,13 @@ else:
         public_key = serialization.load_pem_public_key(f.read())
 
 # ---------------------- Routes ----------------------
+
+@app.route("/list")
+def list_uploads():
+    files = os.listdir(app.config['UPLOAD_FOLDER'])
+    return jsonify(files)
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
