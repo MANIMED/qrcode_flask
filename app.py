@@ -1,22 +1,22 @@
-import os, hashlib, json, base64
+import os
+import hashlib
+import json
+import base64
 from flask import Flask, request, send_file, render_template, jsonify
 import qrcode
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from flask import send_file
 import fitz  # PyMuPDF
-from PIL import Image
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Autorise toutes les origines
+CORS(app)  # Autorise toutes les origines (Ionic)
 
-
-# --- Folders ---
+# ---------------------- Folders ----------------------
 for folder in ["uploads", "signed", "keys"]:
     os.makedirs(folder, exist_ok=True)
 
-# --- Keys ---
+# ---------------------- Keys ----------------------
 PRIVATE_KEY_PATH = "keys/private.pem"
 PUBLIC_KEY_PATH  = "keys/public.pem"
 
@@ -40,23 +40,24 @@ else:
     with open(PUBLIC_KEY_PATH, "rb") as f:
         public_key = serialization.load_pem_public_key(f.read())
 
-# --- Utils ---
+# ---------------------- Utils ----------------------
 def sha256_file(file_bytes):
     h = hashlib.sha256()
     h.update(file_bytes)
     return h.hexdigest()
 
-def sign_hash(pdf_hash):
+def sign_hash(pdf_hash: str):
     return private_key.sign(
         pdf_hash.encode(),
         padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
         hashes.SHA256()
     )
 
-# --- Routes ---
+# ---------------------- Routes ----------------------
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/sign", methods=["POST"])
 def sign_pdf():
@@ -80,7 +81,7 @@ def sign_pdf():
     qr_path = os.path.join("signed", "temp_qr.png")
     qr_img.save(qr_path)
 
-    # --- Sauvegarde PDF original temporaire ---
+    # --- Sauvegarde PDF temporaire ---
     pdf_path = os.path.join("signed", "temp.pdf")
     with open(pdf_path, "wb") as f:
         f.write(pdf_bytes)
@@ -88,11 +89,9 @@ def sign_pdf():
     # --- Ouvrir PDF et insérer QR code sur la première page ---
     doc = fitz.open(pdf_path)
     page = doc[0]
-
-    # Taille et position du QR code
-    rect = fitz.Rect(50, 50, 200, 200)  # X0,Y0,X1,Y1
+    rect = fitz.Rect(50, 50, 200, 200)  # Position et taille du QR code
     page.insert_image(rect, filename=qr_path)
-    
+
     signed_pdf_path = os.path.join("signed", f"signed_{pdf.filename}")
     doc.save(signed_pdf_path)
     doc.close()
@@ -104,22 +103,24 @@ def sign_pdf():
         download_name=f"signed_{pdf.filename}"
     )
 
+
 @app.route("/verify_pdf", methods=["POST"])
 def verify_pdf():
     pdf = request.files["pdf"]
     qr_json = request.form.get("qr_data")
     if not qr_json:
-        return jsonify({"error": "QR missing"}), 400
+        return jsonify({"error": "QR manquant"}), 400
     try:
         qr = json.loads(qr_json)
     except:
-        return jsonify({"valid": False, "message": "QR format invalid"})
-    
+        return jsonify({"valid": False, "message": "QR format invalide"})
+
     pdf_bytes = pdf.read()
     pdf_hash = sha256_file(pdf_bytes)
+
     if pdf_hash != qr["hash"]:
         return jsonify({"valid": False, "message": "Document modifié"})
-    
+
     try:
         public_key.verify(
             base64.b64decode(qr["signature"]),
@@ -131,10 +132,12 @@ def verify_pdf():
     except:
         return jsonify({"valid": False, "message": "Signature invalide"})
 
+
 @app.route("/verify_qr", methods=["POST"])
 def verify_qr():
+    data = request.get_json()
     if not data or "qrData" not in data:
-        return jsonify({"error": "QR missing"}), 400
+        return jsonify({"error": "QR manquant"}), 400
     qr_json = data["qrData"]
     try:
         qr = json.loads(qr_json)
@@ -145,13 +148,17 @@ def verify_qr():
             hashes.SHA256()
         )
         return jsonify({"valid": True, "message": "QR authentique, document signé par serveur"})
-    except:
+    except Exception as e:
+        print("Erreur verify_qr:", e)
         return jsonify({"valid": False, "message": "QR non valide"})
+
 
 @app.route("/download/<filename>")
 def download(filename):
     return send_file(os.path.join("signed", filename), as_attachment=True)
 
+
+# ---------------------- Lancement ----------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
