@@ -84,7 +84,7 @@ def sign_pdf():
         f.write(signature)
 
     # Générer QR Code avec URL Railway
-    verification_url = request.host_url + f"verify_mobile?id={doc_id}"
+   verification_url = f"https://qrcode-flask-x60p.onrender.com/verify_mobile?id={doc_id}"
     qr = qrcode.make(verification_url)
     qr_path = os.path.join(app.config['SIGNED_FOLDER'], f"qr_{doc_id}.png")
     qr.save(qr_path)
