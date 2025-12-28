@@ -104,22 +104,66 @@ def verify_qr_api():
 
 @app.route("/api/verify_pdf", methods=["POST"])
 def verify_pdf_api():
-    """Vérifie le fichier PDF + le QR Code (Audit complet)"""
+    """
+    Audit complet : 
+    Vérifie si le QR correspond aux métadonnées signées à l'intérieur du PDF.
+    """
     if 'pdf' not in request.files or 'qr_data' not in request.form:
         return jsonify({"valid": False, "message": "Données incomplètes"}), 400
 
+    pdf_file = request.files['pdf']
     qr_data_raw = request.form.get('qr_data')
+
     try:
+        # 1. Charger les données du QR fourni (scanné par l'utilisateur)
         qr = json.loads(qr_data_raw)
+        qr_hash = qr.get("hash")
+        qr_sig = qr.get("signature")
+
+        # 2. Ouvrir le PDF envoyé pour extraire ses métadonnées cachées
+        pdf_bytes = pdf_file.read()
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        metadata = doc.metadata.get("subject", "")
+        doc.close()
+
+        # 3. Vérification de la présence de la signature dans le PDF
+        if not metadata.startswith("SIG:"):
+            return jsonify({
+                "valid": False, 
+                "message": "Ce fichier ne contient aucune signature numérique valide."
+            }), 401
+
+        # Extraire le hash stocké dans le PDF (Format SIG:hash|signature)
+        parts = metadata.replace("SIG:", "").split("|")
+        pdf_stored_hash = parts[0]
+
+        # 4. ÉTAPE DE SÉCURITÉ : Comparaison
+        # On vérifie si le hash du QR scanné est le même que celui gravé dans le PDF
+        if qr_hash != pdf_stored_hash:
+            return jsonify({
+                "valid": False, 
+                "message": "⚠️ Fraude détectée : Le QR code ne correspond pas à ce document spécifique."
+            }), 401
+
+        # 5. VÉRIFICATION CRYPTOGRAPHIQUE RSA
+        # On vérifie que le hash a bien été signé par notre clé privée
         public_key.verify(
-            base64.b64decode(qr["signature"]),
-            qr["hash"].encode(),
+            base64.b64decode(qr_sig),
+            qr_hash.encode(),
             padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
             hashes.SHA256()
         )
-        return jsonify({"valid": True, "message": "Document Intègre"})
-    except:
-        return jsonify({"valid": False, "message": "Document ou QR Invalide"}), 401
+
+        return jsonify({
+            "valid": True, 
+            "message": "✅ Document Authentique : Le QR et le PDF sont liés et certifiés."
+        })
+
+    except Exception as e:
+        return jsonify({
+            "valid": False, 
+            "message": "❌ Échec de l'audit : Signature invalide ou corrompue."
+        }), 401
 
 @app.route("/api/sign", methods=["POST"])
 def sign_api():
