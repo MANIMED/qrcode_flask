@@ -3,194 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Secure Sign | Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>PDF Secure Sign | Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #2563eb;
-            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --error: #ef4444;
             --bg: #f8fafc;
             --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
             --radius: 12px;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding: 40px 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        header h1 {
-            font-size: 2.25rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            color: #0f172a;
-        }
-
-        header p {
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 32px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover { transform: translateY(-2px); }
-
-        .card h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card h2 svg { color: var(--primary); }
-
-        .form-group { margin-bottom: 20px; }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-main);
-        }
-
-        input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 2px dashed var(--border);
-            border-radius: var(--radius);
-            cursor: pointer;
-            background: #fdfdfd;
-        }
-
-        input[type="file"]:hover { border-color: var(--primary); }
-
-        textarea {
-            width: 100%;
-            height: 100px;
+        body { font-family: 'Inter', sans-serif; background: var(--bg); padding: 40px 20px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: var(--radius); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        
+        h2 { font-size: 1.1rem; margin-bottom: 15px; font-weight: 700; color: #0f172a; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+        
+        input[type="file"], textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
+        textarea { height: 80px; font-family: monospace; }
+        
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .btn-blue { background: var(--primary); }
+        .btn-green { background: var(--success); }
+        
+        /* Zone de message */
+        .result-message {
+            margin-top: 15px;
             padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-family: monospace;
-            font-size: 0.85rem;
-            resize: none;
-            background: #f8fafc;
+            border-radius: 8px;
+            display: none; /* Caché par défaut */
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
         }
-
-        button {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-
-        button:hover { background-color: var(--primary-hover); }
-
-        .full-width { grid-column: 1 / -1; }
-
-        @media (max-width: 600px) {
-            .grid { grid-template-columns: 1fr; }
-        }
+        .msg-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1>🔐 PDF Secure Sign</h1>
-        <p>Signature et vérification cryptographique RSA-2048</p>
+    <header style="text-align:center; margin-bottom:30px;">
+        <h1>🔐 Secure PDF Dashboard</h1>
     </header>
 
-    <div class="grid">
-        <div class="card">
-            <h2>
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                Signer un PDF
-            </h2>
-            <form action="/sign" method="post" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Document PDF original</label>
-                    <input type="file" name="pdf" accept="application/pdf" required>
-                </div>
-                <button type="submit">Générer le PDF signé</button>
-            </form>
-        </div>
+    <div class="card">
+        <h2>Signer un PDF</h2>
+        <form id="signForm">
+            <div class="form-group">
+                <input type="file" name="pdf" required>
+            </div>
+            <button type="submit" class="btn-blue">Générer et Télécharger</button>
+        </form>
+    </div>
 
-        <div class="card">
-            <h2>
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-                Vérifier un QR seul
-            </h2>
-            <form action="/verify_qr" method="post">
-                <div class="form-group">
-                    <label>Données JSON du QR Code</label>
-                    <textarea name="qr_data" placeholder='{"hash": "...", "signature": "..."}' required></textarea>
-                </div>
-                <button type="submit" style="background-color: #10b981;">Valider la signature</button>
-            </form>
-        </div>
-
-        <div class="card full-width">
-            <h2>
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                Vérification complète (PDF + Données)
-            </h2>
-            <form action="/verify_pdf" method="post" enctype="multipart/form-data">
-                <div style="display: flex; gap: 20px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Le document PDF à vérifier</label>
-                        <input type="file" name="pdf" accept="application/pdf" required>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>JSON extrait du QR</label>
-                        <textarea name="qr_data" placeholder='Copiez ici le texte du QR scanné' required></textarea>
-                    </div>
-                </div>
-                <button type="submit" style="background-color: #6366f1;">Lancer l'audit d'intégrité</button>
-            </form>
-        </div>
+    <div class="card">
+        <h2>Vérifier PDF + QR</h2>
+        <form id="verifyPdfForm">
+            <div class="form-group">
+                <label>Fichier PDF signé</label>
+                <input type="file" name="pdf" required>
+            </div>
+            <div class="form-group">
+                <label>Code JSON du QR</label>
+                <textarea name="qr_data" placeholder='{"hash": "...", "signature": "..."}' required></textarea>
+            </div>
+            <button type="submit" class="btn-green">Lancer la vérification</button>
+            <div id="verifyPdfResult" class="result-message"></div>
+        </form>
     </div>
 </div>
+
+<script>
+    // Fonction utilitaire pour afficher les messages
+    function showMessage(elementId, message, isSuccess) {
+        const el = document.getElementById(elementId);
+        el.textContent = message;
+        el.style.display = 'block';
+        el.className = 'result-message ' + (isSuccess ? 'msg-success' : 'msg-error');
+    }
+
+    // GESTION SIGNATURE (Téléchargement direct)
+    document.getElementById('signForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const response = await fetch('/sign', { method: 'POST', body: formData });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "document_signe.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    };
+
+    // GESTION VERIFICATION PDF
+    document.getElementById('verifyPdfForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        // On appelle la route API qui renvoie du JSON pour avoir une réponse propre
+        const response = await fetch('/api/verify_qr', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrData: formData.get('qr_data') })
+        });
+        
+        const result = await response.json();
+        if (result.valid) {
+            showMessage('verifyPdfResult', '✅ ' + result.message, true);
+        } else {
+            showMessage('verifyPdfResult', '❌ ' + result.message, false);
+        }
+    };
+</script>
 
 </body>
 </html>
