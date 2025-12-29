@@ -88,6 +88,17 @@
         </form>
     </div>
 </div>
+<div class="card">
+    <h2>Appairage Application Mobile</h2>
+    <p style="font-size: 0.8rem; color: #64748b;">Scannez ce code avec votre application Ionic pour récupérer la clé publique de vérification.</p>
+    <button id="btnGenAuth" class="btn-blue" style="background: #4f46e5;">Générer un QR d'Accès Unique</button>
+    
+    <div id="authQrContainer" style="text-align:center; margin-top:20px; display:none;">
+        <img id="authQrImg" src="" style="border: 4px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 200px;">
+        <p id="tokenTimer" style="font-size: 0.75rem; color: #ef4444; margin-top:10px;">Usage unique - Expire après scan</p>
+    </div>
+</div>
+
 
 <script>
     function showMessage(elementId, message, isSuccess) {
@@ -152,6 +163,17 @@
             showMessage('verifyPdfResult2', '✅ Signature QR Code Authentique', true);
         } else {
             showMessage('verifyPdfResult2', '❌ QR Code non reconnu ou invalide', false);
+        }
+    };
+
+        // Logique pour générer le QR d'authentification
+    document.getElementById('btnGenAuth').onclick = async () => {
+        const response = await fetch('/api/get_auth_qr');
+        const data = await response.json();
+        
+        if(data.qr_image) {
+            document.getElementById('authQrImg').src = "data:image/png;base64," + data.qr_image;
+            document.getElementById('authQrContainer').style.display = 'block';
         }
     };
 </script>

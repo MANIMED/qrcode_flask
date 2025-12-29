@@ -8,6 +8,7 @@ from flask import Flask, request, send_file, render_template, jsonify
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from flask_cors import CORS
+import uuid # Pour générer des identifiants uniques
 
 app = Flask(__name__)
 CORS(app)
@@ -172,6 +173,55 @@ def sign_api():
         "qr_data": qr_payload, 
         "download_url": f"/download/{os.path.basename(path)}"
     })
+
+
+
+# Stockage temporaire des jetons (en production, utilisez Redis ou une DB)
+pending_auth_tokens = {}
+
+# --- NOUVELLE ROUTE : Générer le QR d'auth pour le site web ---
+@app.route("/api/get_auth_qr")
+def get_auth_qr():
+    # 1. Créer un jeton unique et aléatoire
+    token = str(uuid.uuid4())
+    # 2. Stocker le jeton (valide 1 seule fois)
+    pending_auth_tokens[token] = True 
+    
+    # 3. Créer le contenu du QR (le hash que l'app devra renvoyer)
+    auth_payload = {"auth_token": token, "action": "request_public_key"}
+    
+    # Générer l'image QR en base64 pour l'afficher direct sur la page
+    img = qrcode.make(json.dumps(auth_payload))
+    import io
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+    
+    return jsonify({"qr_image": qr_b64, "token": token})
+
+# --- NOUVELLE ROUTE : L'app Ionic appelle ceci pour avoir la clé ---
+@app.route("/api/fetch_public_key", methods=["POST"])
+def fetch_public_key():
+    data = request.get_json()
+    token = data.get("auth_token")
+
+    # Vérification : Le jeton existe-t-1 et est-il valide ?
+    if token in pending_auth_tokens:
+        # SÉCURITÉ : On supprime le jeton immédiatement (Usage Unique)
+        del pending_auth_tokens[token]
+        
+        # On lit la clé publique pour l'envoyer
+        with open(PUBLIC_KEY_PATH, "r") as f:
+            pub_key_content = f.read()
+            
+        return jsonify({
+            "success": True, 
+            "public_key": pub_key_content,
+            "message": "Clé transmise avec succès"
+        })
+    else:
+        return jsonify({"success": False, "message": "Jeton invalide ou déjà utilisé"}), 403
+
 
 @app.route("/download/<filename>")
 def download(filename):
