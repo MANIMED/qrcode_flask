@@ -5,3 +5,4 @@ PyMuPDF
 Pillow
 gunicorn
 Flask-Cors
+reportlab
