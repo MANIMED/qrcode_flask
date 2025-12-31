@@ -51,7 +51,7 @@ def core_sign(pdf_file):
         pdf_hash.encode(),
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()), 
-            salt_length=32  # Changé : MAX_LENGTH -> 32
+            salt_length=padding.PSS.MAX_LENGTH  # Changé : MAX_LENGTH -> 32
         ),
         hashes.SHA256()
     )
@@ -87,7 +87,7 @@ def verify_qr_api():
             qr["hash"].encode(),
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()), 
-                salt_length=32  # Changé : MAX_LENGTH -> 32
+                salt_length=padding.PSS.MAX_LENGTH  # Changé : MAX_LENGTH -> 32
             ),
             hashes.SHA256()
         )
@@ -128,7 +128,7 @@ def verify_pdf_api():
             qr_hash.encode(),
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()), 
-                salt_length=32  # Changé : MAX_LENGTH -> 32
+                salt_length=padding.PSS.MAX_LENGTH  # Changé : MAX_LENGTH -> 32
             ),
             hashes.SHA256()
         )
