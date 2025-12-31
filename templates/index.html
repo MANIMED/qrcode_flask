@@ -47,7 +47,7 @@
 
 <div class="container">
     <header style="text-align:center; margin-bottom:30px;">
-        <h1>🔐 Secure PDF Dashboard</h1>
+        <h1> Secure PDF Dashboard</h1>
     </header>
 
     <div class="card">
@@ -71,7 +71,33 @@
             <div id="verifyPdfResult2" class="result-message"></div>
         </form>
     </div>
-
+<div class="card">
+    <h2>🎫 Générer un Ticket d'Événement</h2>
+    <form id="ticketForm">
+        <div class="form-group">
+            <label>Type de Place</label>
+            <select name="type" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+                <option value="Simple">Simple</option>
+                <option value="VIP">VIP</option>
+                <option value="VVIP">VVIP</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Numéro de Place</label>
+            <input type="text" name="place" value="A042" required>
+        </div>
+        <div class="form-group">
+            <label>Date de l'Événement</label>
+            <input type="date" name="date" value="2025-12-31" required>
+        </div>
+        <div class="form-group">
+            <label>Heure</label>
+            <input type="time" name="time" value="20:00" required>
+        </div>
+        <button type="submit" class="btn-blue" style="background:#8b5cf6;">Générer le Ticket</button>
+        <div id="ticketResult" class="result-message"></div>
+    </form>
+</div>
     <div class="card">
         <h2>Vérifier PDF + QR</h2>
         <form id="verifyPdfForm">
@@ -176,6 +202,36 @@
             document.getElementById('authQrContainer').style.display = 'block';
         }
     };
+
+    // Generation de ticket 
+    document.getElementById('ticketForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    const ticketData = {
+        type: formData.get('type'),
+        place: formData.get('place'),
+        date: formData.get('date'),
+        time: formData.get('time')
+    };
+    
+    const response = await fetch('/api/generate_ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticketData)
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+        showMessage('ticketResult', ' Ticket généré avec succès!', true);
+        
+        // Télécharger automatiquement
+        const downloadUrl = result.download_url;
+        window.open(downloadUrl, '_blank');
+    } else {
+        showMessage('ticketResult', ' Erreur: ' + result.message, false);
+    }
+};
 </script>
 
 </body>
